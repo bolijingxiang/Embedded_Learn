@@ -1,0 +1,28 @@
+--cpu=Cortex-M4.fp.sp
+".\serial_learn\startup_stm32f429xx.o"
+".\serial_learn\main.o"
+".\serial_learn\gpio.o"
+".\serial_learn\dma.o"
+".\serial_learn\usart.o"
+".\serial_learn\stm32f4xx_it.o"
+".\serial_learn\stm32f4xx_hal_msp.o"
+".\serial_learn\ring_buffer.o"
+".\serial_learn\stm32f4xx_hal_uart.o"
+".\serial_learn\stm32f4xx_hal_rcc.o"
+".\serial_learn\stm32f4xx_hal_rcc_ex.o"
+".\serial_learn\stm32f4xx_hal_flash.o"
+".\serial_learn\stm32f4xx_hal_flash_ex.o"
+".\serial_learn\stm32f4xx_hal_flash_ramfunc.o"
+".\serial_learn\stm32f4xx_hal_gpio.o"
+".\serial_learn\stm32f4xx_hal_dma_ex.o"
+".\serial_learn\stm32f4xx_hal_dma.o"
+".\serial_learn\stm32f4xx_hal_pwr.o"
+".\serial_learn\stm32f4xx_hal_pwr_ex.o"
+".\serial_learn\stm32f4xx_hal_cortex.o"
+".\serial_learn\stm32f4xx_hal.o"
+".\serial_learn\stm32f4xx_hal_exti.o"
+".\serial_learn\system_stm32f4xx.o"
+--strict --scatter ".\Serial_Learn\Serial_Learn.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "Serial_Learn.map" -o .\Serial_Learn\Serial_Learn.axf

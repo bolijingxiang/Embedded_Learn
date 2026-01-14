@@ -1,0 +1,120 @@
+========================================
+UART 环形队列使用说明
+========================================
+
+## 功能概述
+
+本项目实现了基于 DMA + IDLE 中断的 UART 接收，并使用环形队列缓存接收到的数据。
+
+## 工作原理
+
+1. **DMA 接收**：USART2 使用 DMA 持续接收数据到 rx_buffer
+2. **IDLE 中断**：当串口总线空闲时触发中断
+3. **数据拷贝**：在中断回调函数中，将 rx_buffer 的数据拷贝到环形队列
+4. **主循环处理**：在 main 函数中从环形队列读取数据并处理
+
+## 主要文件
+
+- Core/Inc/ring_buffer.h      - 环形队列头文件
+- Core/Src/ring_buffer.c      - 环形队列实现
+- Core/Inc/usart.h            - UART 配置头文件
+- Core/Src/usart.c            - UART 配置和中断处理
+- Core/Src/stm32f4xx_it.c    - 中断服务程序
+
+## 环形队列 API
+
+### 初始化
+void RingBuffer_Init(RingBuffer_t *rb);
+
+### 写入数据
+bool RingBuffer_Write(RingBuffer_t *rb, uint8_t data);              // 写入单字节
+bool RingBuffer_WriteBuffer(RingBuffer_t *rb, const uint8_t *data, uint16_t len);  // 写入多字节
+
+### 读取数据
+bool RingBuffer_Read(RingBuffer_t *rb, uint8_t *data);              // 读取单字节
+uint16_t RingBuffer_ReadBuffer(RingBuffer_t *rb, uint8_t *data, uint16_t len);     // 读取多字节
+
+### 状态查询
+bool RingBuffer_IsEmpty(RingBuffer_t *rb);        // 检查是否为空
+bool RingBuffer_IsFull(RingBuffer_t *rb);         // 检查是否已满
+uint16_t RingBuffer_GetCount(RingBuffer_t *rb);   // 获取数据量
+uint16_t RingBuffer_GetFreeSpace(RingBuffer_t *rb); // 获取剩余空间
+
+### 清空队列
+void RingBuffer_Clear(RingBuffer_t *rb);
+
+## 使用示例
+
+### 在 main.c 中读取数据：
+
+```c
+uint8_t rx_data[256];
+uint16_t len;
+
+// 检查是否有数据
+if (!RingBuffer_IsEmpty(&uart_rx_ring_buffer)) {
+    // 读取数据
+    len = RingBuffer_ReadBuffer(&uart_rx_ring_buffer, rx_data, sizeof(rx_data));
+    
+    // 处理数据
+    if (len > 0) {
+        // 你的数据处理代码
+        // 例如：解析命令、回显数据等
+    }
+}
+```
+
+### 查询队列状态：
+
+```c
+// 获取当前数据量
+uint16_t count = RingBuffer_GetCount(&uart_rx_ring_buffer);
+
+// 获取剩余空间
+uint16_t free_space = RingBuffer_GetFreeSpace(&uart_rx_ring_buffer);
+
+// 检查是否快满了
+if (free_space < 100) {
+    // 处理即将满的情况
+}
+```
+
+## 配置参数
+
+在 ring_buffer.h 中可以修改：
+
+- RING_BUFFER_SIZE：环形队列大小（默认 1024 字节）
+
+在 usart.c 中可以修改：
+
+- BUFFER_SIZE：DMA 接收缓冲区大小（默认 100 字节）
+
+## 注意事项
+
+1. **中断安全**：环形队列的写入在中断中进行，读取在主循环中进行，使用 volatile 确保数据同步
+
+2. **溢出处理**：如果环形队列满了，新数据会被丢弃。可以在 USART2_IRQHandler_CALLBACK 中添加错误处理
+
+3. **DMA 重启**：每次 IDLE 中断后会自动重启 DMA 接收
+
+4. **性能优化**：
+   - 如果数据量大，可以增加 RING_BUFFER_SIZE
+   - 如果接收频繁，可以减少主循环的延时时间
+
+## 优势
+
+✓ 不会丢失数据（在队列未满的情况下）
+✓ 中断处理快速，不阻塞
+✓ 主循环可以按需处理数据
+✓ 支持不定长数据接收
+✓ 线程安全（单生产者单消费者模型）
+
+## 调试建议
+
+1. 在 USART2_IRQHandler_CALLBACK 中设置断点，检查是否进入中断
+2. 检查 rx_len 的值，确认接收到的数据长度
+3. 检查 RingBuffer_WriteBuffer 的返回值，确认数据是否成功写入
+4. 在主循环中打印队列状态，监控数据流
+
+========================================
+
